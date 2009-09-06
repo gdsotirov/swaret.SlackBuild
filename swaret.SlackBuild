@@ -1,0 +1,54 @@
+#!/bin/sh
+#
+# SlackBuild for SlackWARe Tool
+# Written by Georgi D. Sotirov <gdsotirov@dir.bg>
+#
+# This script is just repackaging the latest relased version of SWARET with
+# the patch from Georgi D. Sotirov for support for different slackware
+# package extensions (tbz, tgz, tlx, txz). The build also includes fixed
+# Bulgarian support.
+#
+
+. ../slack-package.conf
+
+NAME=swaret
+VERSION=1.6.3
+OLDBUILD=2
+BUILD=1
+ARCH=${ARCH:-noarch}
+
+TMP=${TMP:-/tmp}
+CWD=${CWD:-`pwd`}
+
+if [ ! -e $TMP ]; then
+  mkdir -p $TMP # location to explode the package
+fi
+
+PKG=$TMP/package-$NAME
+if [ -e $PKG -a -d $PKG ]; then
+  echo "Package creation directory '$PKG' already exists! Please, move it or remove it."
+  exit 2
+fi
+mkdir -p $PKG
+
+# Explode the official package
+cd $PKG
+explodepkg $CWD/$NAME-$VERSION-$ARCH-$OLDBUILD.tgz
+fix_source
+
+# Patch the package
+patch -p1 < $CWD/swaret-$VERSION.diff
+install -m 644 $CWD/slack-required $PKG/install/slack-required
+
+# Re-Pack
+PKGNAME=$NAME-$VERSION-$ARCH-$BUILD$MYIN
+makepkg -l y -c n -p $PKG_DIR/$PKGNAME.tgz
+cd $PKG_DIR
+md5sum $PKGNAME.tgz > $PKGNAME.tgz.md5
+cat $PKG/install/slack-desc > $PKG_DIR/$PKGNAME.txt
+
+# Clean up (optionally)
+if [ "$1" == "--cleanup" ]; then
+  rm -rf $PKG
+fi
+
