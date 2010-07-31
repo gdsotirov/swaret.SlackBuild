@@ -1,0 +1,200 @@
+diff -N -r -U 3 swaret-1.6.3-mine/usr/sbin/swaret swaret-1.6.3-btracy/usr/sbin/swaret
+--- swaret-1.6.3-mine/usr/sbin/swaret	2009-07-21 23:59:52.000000000 +0300
++++ swaret-1.6.3-btracy/usr/sbin/swaret	2010-07-31 20:19:21.000000000 +0300
+@@ -4997,7 +4997,32 @@
+                 if [ -f $FILEP/$x ]; then
+                   cd $FILEP
+                 fi
+-                tar tzfv $x 2>/dev/null | grep bin/ | awk '{print$6}' | sed -e 's/.*/'$x':&/' >> TARFILES.tmp 2>/dev/null
++
++                # Tar support for compression schemes is a bad idea
++                # that should NEVER have seen the light of day, i.e.,
++                # that is what pipes are for.  To compensate for this
++                # bogosity, try doing what "installpkg" does: set a
++                # "packagecompression" variable based on the package
++                # extension.  The original code has been left as a
++                # warning.        --rct
++                #
++                # tar tzfv $x 2>/dev/null | grep bin/ | awk '{print$6}' | sed -e 's/.*/'$x':&/' >> TARFILES.tmp 2>/dev/null
++                #
++                case $PKG_EXT in
++                'tgz' )
++                  packagecompression=gzip
++                  ;;
++                'tbz' )
++                  packagecompression=bzip2
++                  ;;
++                'tlz' )
++                  packagecompression=lzma
++                  ;;
++                'txz' )
++                  packagecompression=xz
++                  ;;
++                esac
++                ( $packagecompression -dc | tar tvf - ) < $x 2>/dev/null | grep bin/ | awk '{print$6}' | sed -e 's/.*/'$x':&/' >> TARFILES.tmp 2>/dev/null
+                 if [ -f $FILEP/$x ]; then
+                   cd $CDIR/
+                 fi
+@@ -5007,6 +5032,7 @@
+         fi
+       done
+       for i in $PACKAGES; do
++        PKG_EXT=`echo $i | sed 's/.*\.//'`
+         DSHORTPKG=`echo $i | sed -r "s/.($PKG_EXTS)//"`
+         if [ -f $DSHORTPKG.rrx ]; then
+           if [ -f $PACKAGES_LOGDIR/$DSHORTPKG ]; then
+@@ -5058,7 +5084,24 @@
+                 if [ -f $FILEP/$i ]; then
+                   cd $FILEP
+                 fi
+-                tar tzfv $i 2>/dev/null | grep bin/ | awk '{print$6}' | sed -e 's/.*/'$i':&/' >> TARFILES.tmp 2>/dev/null
++
++                # See editorial comments above concerning tar
++                # support for compression.        --rct
++                case $PKG_EXT in
++                'tgz' )
++                  packagecompression=gzip
++                  ;;
++                'tbz' )
++                  packagecompression=bzip2
++                  ;;
++                'tlz' )
++                  packagecompression=lzma
++                  ;;
++                'txz' )
++                  packagecompression=xz
++                  ;;
++                esac
++                ( $packagecompression -dc | tar tvf - ) < $i 2>/dev/null | grep bin/ | awk '{print$6}' | sed -e 's/.*/'$i':&/' >> TARFILES.tmp 2>/dev/null
+                 if [ -f $FILEP/$i ]; then
+                   cd $CDIR/
+                 fi
+@@ -5070,6 +5113,7 @@
+         fi
+       done
+       for i in $PACKAGES; do
++        PKG_EXT=`echo $i | sed 's/.*\.//'`
+         DSHORTPKG=`echo $i | sed -r "s/.($PKG_EXTS)//"`
+         if [ -f $DSHORTPKG.iix ]; then
+           if [ ! -f $PACKAGES_LOGDIR/$DSHORTPKG ]; then
+@@ -5118,7 +5162,24 @@
+             if [ -f $FILEP/$i ]; then
+               cd $FILEP
+             fi
+-            tar tzfv $i 2>/dev/null | grep bin/ | awk '{print$6}' | sed -e 's/.*/'$i':&/' >> TARFILES.tmp 2>/dev/null
++ 
++            # See editorial comments above concerning tar
++            # support for compression. --rct
++            case $PKG_EXT in
++            'tgz' )
++              packagecompression=gzip
++              ;;
++            'tbz' )
++              packagecompression=bzip2
++              ;;
++            'tlz' )
++              packagecompression=lzma
++              ;;
++            'txz' )
++              packagecompression=xz
++              ;;
++             esac
++             ( $packagecompression -dc | tar tvf - ) < $i 2>/dev/null | grep bin/ | awk '{print$6}' | sed -e 's/.*/'$i':&/' >> TARFILES.tmp 2>/dev/null
+             if [ -f $FILEP/$i ]; then
+               cd $CDIR/
+             fi
+@@ -5451,7 +5512,25 @@
+       if test `echo "$i" | grep -c "%"` -ge 1; then
+         cd repos/$RNAME 2>/dev/null
+       fi
+-      tar tzfv $SHORT.$PKG_EXT 2>/dev/null | grep bin/ | awk '{print$6}' | sed -e 's/.*/'$SHORT.$PKG_EXT':&/' >> TARFILES.tmp
++
++      # See editorial comments above concerning tar
++      # support for compression.       --rct
++      case $PKG_EXT in
++      'tgz' )
++        packagecompression=gzip
++        ;;
++      'tbz' )
++        packagecompression=bzip2
++        ;;
++      'tlz' )
++        packagecompression=lzma
++        ;;
++      'txz' )
++        packagecompression=xz
++        ;;
++      esac
++      ( $packagecompression -dc | tar tvf - ) < $SHORT.$PKG_EXT 2>/dev/null | grep bin/ | awk '{print$6}' | sed -e 's/.*/'$SHORT.$PKG_EXT':&/' >> TARFILES.tmp
++
+       if test `echo "$i" | grep -c "%"` -ge 1; then
+         cd $CDIR/ 2>/dev/null
+       fi
+@@ -5520,6 +5599,7 @@
+   }
+   install_pkg()
+   {
++    PKG_EXT=`echo $1 | sed 's/.*\.//'`
+     SHORT=`echo $1 | sed -r "s/.($PKG_EXTS)//" | sed -e s/-[0-9].*//`
+     xSWAP=0
+     if [ -z $3 ]; then
+@@ -5580,7 +5660,24 @@
+         if [ ! -z $3 ]; then
+           cd repos/$3
+         fi
+-        tar tzfv $1 2>/dev/null | grep bin/ | awk '{print$6}' | sed -e 's/.*/'$1':&/' >> $CDIR/TARFILES.tmp
++
++        # See editorial comments above concerning tar
++        # support for compression.        --rct
++        case $PKG_EXT in
++        'tgz' )
++          packagecompression=gzip
++          ;;
++        'tbz' )
++          packagecompression=bzip2
++          ;;
++        'tlz' )
++          packagecompression=lzma
++          ;;
++        'txz' )
++          packagecompression=xz
++          ;;
++        esac
++        ( $packagecompression -dc | tar tvf - ) < $1 2>/dev/null | grep bin/ | awk '{print$6}' | sed -e 's/.*/'$1':&/' >> $CDIR/TARFILES.tmp
+         if [ ! -z $3 ]; then
+           cd $CDIR/
+         fi
+@@ -5825,6 +5922,7 @@
+ {
+   install_pkg()
+   {
++    PKG_EXT=`echo $1 | sed 's/.*\.//'`
+     SHORT=`echo $1 | sed -r "s/.($PKG_EXTS)//" | sed -e s/-[0-9].*//`
+     xSWAP=0
+     if [ -z $3 ]; then
+@@ -5870,7 +5968,24 @@
+           if [ ! -z $3 ]; then
+             cd repos/$3
+           fi
+-          tar tzfv $1 2>/dev/null | grep bin/ | awk '{print$6}' | sed -e 's/.*/'$1':&/' >> $CDIR/TARFILES.tmp
++
++          # See editorial comments above concerning tar
++          # support for compression.        --rct
++          case $PKG_EXT in
++          'tgz' )
++            packagecompression=gzip
++            ;;
++          'tbz' )
++            packagecompression=bzip2
++            ;;
++          'tlz' )
++            packagecompression=lzma
++            ;;
++          'txz' )
++            packagecompression=xz
++            ;;
++          esac
++          ( $packagecompression -dc | tar tvf - ) < $1 2>/dev/null | grep bin/ | awk '{print$6}' | sed -e 's/.*/'$1':&/' >> $CDIR/TARFILES.tmp
+           if [ ! -z $3 ]; then
+             cd $CDIR/
+           fi
