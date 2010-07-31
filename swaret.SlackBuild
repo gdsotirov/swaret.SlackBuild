@@ -3,10 +3,13 @@
 # SlackBuild for SlackWARe Tool
 # Written by Georgi D. Sotirov <gdsotirov@dir.bg>
 #
-# This script is just repackaging the latest relased version of SWARET with
-# the patch from Georgi D. Sotirov for support for different slackware
-# package extensions (tbz, tgz, tlx, txz). The build also includes fixed
-# Bulgarian support.
+# This script just repackages the latest officially relased version (1.6.3 
+# from 2006-10-27) of SWARET with additionally:
+#  - patch from Georgi D. Sotirov adding support for different package
+#    extensions (tbz, tgz, tlx, txz)
+#  - patch from Bob Tracy fixing dependency check with different compression
+#    methods
+#  - fixed Bulgarian support.
 #
 
 . ../slack-package.conf
@@ -14,8 +17,8 @@
 NAME=swaret
 VERSION=1.6.3
 OLDBUILD=2
-BUILD=1
-ARCH=${ARCH:-noarch}
+BUILD=2
+ARCH=noarch
 
 TMP=${TMP:-/tmp}
 CWD=${CWD:-`pwd`}
@@ -36,9 +39,19 @@ cd $PKG
 explodepkg $CWD/$NAME-$VERSION-$ARCH-$OLDBUILD.tgz
 fix_source
 
-# Patch the package
-patch -p1 < $CWD/swaret-$VERSION.diff
+# Apply patches
+patch -p1 < $CWD/$NAME-$VERSION-newext-fix.diff
+patch -p1 < $CWD/$NAME-$VERSION-depcheck-fix.diff
 install -m 644 $CWD/slack-required $PKG/install/slack-required
+
+# 
+SB_DIR=$PKG/usr/src/slackbuilds/$NAME-$VERSION
+install -m 755 -d $SB_DIR
+install -m 644 $PKG/install/slack-desc               $SB_DIR/slack-desc
+install -m 644 $CWD/slack-required                   $SB_DIR/slack-required
+install -m 644 $CWD/$NAME-$VERSION-newext-fix.diff   $SB_DIR/$NAME-$VERSION-newext-fix.diff
+install -m 644 $CWD/$NAME-$VERSION-depcheck-fix.diff $SB_DIR/$NAME-$VERSION-depcheck-fix.diff
+install -m 644 $CWD/$NAME.SlackBuild                 $SB_DIR/$NAME.SlackBuild
 
 # Re-Pack
 PKGNAME=$NAME-$VERSION-$ARCH-$BUILD$MYIN
