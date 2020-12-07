@@ -1272,7 +1272,7 @@ diff -U 3 -r swaret-1.6.3-2/usr/sbin/swaret swaret-1.6.3-mine/usr/sbin/swaret
  ### EDIT EVERYTHING BEYOND THIS LINE #######################
  
 -# TRANSLATOR=Anton Kenov <anton_kenov@yahoo.com>
-+# TRANSLATOR=Georgi D. Sotirov <gdsotirov@dir.bg>
++# TRANSLATOR=Georgi D. Sotirov <gdsotirov@gmail.com>
  # LANGUAGE=Bulgarian
  
 -MSG_FETCHING_CLF="Извеждане на списък с контролни суми CHECKSUMS..."
